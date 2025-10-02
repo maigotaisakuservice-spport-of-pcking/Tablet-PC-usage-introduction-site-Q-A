@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>システム管理者向けポータル - パスワード認証</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .password-form {
+            text-align: center;
+            margin-top: 3rem;
+        }
+        .password-form input {
+            font-size: 1.2rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            margin-right: 0.5rem;
+            width: 200px;
+        }
+        .password-form button {
+            font-size: 1.2rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .password-form button:hover {
+            background-color: #0056b3;
+        }
+        #error-message {
+            color: red;
+            margin-top: 1rem;
+            font-weight: bold;
+            display: none; /* Initially hidden */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>システム管理者向け利用ガイド</h1>
+    </header>
+    <main>
+        <div class="password-form">
+            <h2>パスワードを入力してください</h2>
+            <form id="password-form-admin">
+                <input type="password" id="password" required>
+                <button type="submit">認証</button>
+            </form>
+            <p id="error-message">パスワードが違います。</p>
+            <p style="margin-top: 2rem;"><a href="index.html">トップページに戻る</a></p>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 学校法人</p>
+    </footer>
+    <script>
+        document.getElementById('password-form-admin').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form from submitting the traditional way
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+
+            // The password for admins is "5020"
+            if (password === '5020') {
+                // Redirect to the actual guide page
+                window.location.href = 'for_admins.html';
+            } else {
+                // Show error message
+                errorMessage.style.display = 'block';
+                // Clear the password field
+                document.getElementById('password').value = '';
+            }
+        });
+    </script>
+</body>
+</html>
