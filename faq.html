@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>よくある質問 (FAQ) - PC利用ガイド</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/print.css" media="print">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        details {
+            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+        summary {
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            list-style: none; /* markerを消す */
+            display: flex;
+            align-items: center;
+            color: #343a40;
+        }
+        summary::before {
+            content: 'help_outline';
+            font-family: 'Material Icons';
+            margin-right: 0.8rem;
+            color: #2193b0;
+            transition: transform 0.2s ease-in-out;
+        }
+        details[open] summary {
+            color: #007bff;
+        }
+        details[open] summary::before {
+            transform: rotate(180deg);
+        }
+        .faq-answer {
+            margin-top: 1rem;
+            padding-left: 2.3rem; /* Indent the answer */
+            border-left: 3px solid #6dd5ed;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>よくある質問 (FAQ)</h1>
+        <nav>
+            <a href="index.html">ホーム</a>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>よくある質問と回答</h2>
+            <details>
+                <summary>Q. プリンターで印刷ができません。</summary>
+                <div class="faq-answer">
+                    <p>A. 以下の点を確認してみてください。</p>
+                    <ol>
+                        <li>プリンターの電源は入っていますか？</li>
+                        <li>PCとプリンターは正しくネットワークに接続されていますか？（有線またはWi-Fi）</li>
+                        <li>印刷しようとしているプリンターの名前は正しいですか？（例: 1階職員室プリンター）</li>
+                        <li>それでも解決しない場合は、一度PCを再起動してみてください。</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details>
+                <summary>Q. PCの動作がとても遅いです。</summary>
+                <div class="faq-answer">
+                    <p>A. いくつか原因が考えられます。</p>
+                    <ul>
+                        <li><strong>たくさんのアプリを同時に開いていませんか？</strong><br>使っていないアプリケーションやブラウザのタブはこまめに閉じましょう。</li>
+                        <li><strong>再起動は試しましたか？</strong><br>長時間使い続けていると、不要なデータが溜まって動作が遅くなることがあります。一度再起動すると改善することが多いです。</li>
+                        <li><strong>それでも遅い場合:</strong><br>特定のアプリケーションを使っている時だけ遅いのか、常に遅いのかをメモして、システム管理者に相談してください。</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details>
+                <summary>Q. インターネットに繋がりません。</summary>
+                <div class="faq-answer">
+                    <p>A. 以下の順番で確認してみてください。</p>
+                    <ol>
+                        <li>PCのWi-Fi設定はオンになっていますか？ タスクバーのWi-Fiアイコンを確認してください。</li>
+                        <li>学校の正しいWi-Fiネットワーク（SSID）に接続していますか？</li>
+                        <li>一度Wi-Fiの接続をオフにして、再度オンにしてみてください。</li>
+                        <li>PCを再起動すると直ることもあります。</li>
+                        <li>周りの友達はインターネットに繋がっていますか？ もし全員が繋がらない場合は、ネットワーク全体の障害かもしれません。先生に報告してください。</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details>
+                <summary>Q. 音が出ません。</summary>
+                <div class="faq-answer">
+                    <p>A. 以下の点を確認してみてください。</p>
+                    <ul>
+                        <li>タスクバーの右下にあるスピーカーのアイコンがミュート（消音）になっていませんか？</li>
+                        <li>音量は十分に上がっていますか？</li>
+                        <li>ヘッドホンを接続している場合は、プラグが奥までしっかり差し込まれているか確認してください。</li>
+                    </ul>
+                </div>
+            </details>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 学校法人</p>
+    </footer>
+</body>
+</html>

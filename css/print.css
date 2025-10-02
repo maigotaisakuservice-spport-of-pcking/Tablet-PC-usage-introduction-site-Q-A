@@ -1,0 +1,64 @@
+@media print {
+    /* Hide non-essential elements */
+    header,
+    footer,
+    .os-selector,
+    nav {
+        display: none !important;
+    }
+
+    /* Ensure main content uses full width */
+    body {
+        font-size: 12pt;
+        color: #000000;
+        background-color: #ffffff;
+    }
+
+    main {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    /* Ensure all content is visible, overriding the JS toggle */
+    .os-content {
+        display: block !important;
+    }
+
+    /* Style links to be more print-friendly */
+    a {
+        text-decoration: underline;
+        color: #000000;
+    }
+
+    /* Show the URL of links in parentheses after the link text */
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+
+    /* Don't show the URL for internal page links */
+    a[href^="#"]:after {
+        content: "";
+    }
+
+    h1, h2, h3 {
+        color: #000000;
+        border: none;
+        page-break-after: avoid; /* Avoid breaking pages right after a heading */
+    }
+
+    /* Avoid breaking images and lists across pages */
+    .icon-placeholder,
+    ul,
+    ol,
+    article {
+        page-break-inside: avoid;
+    }
+
+    /* Hide icon placeholders as they don't add value on paper */
+    .icon-placeholder {
+        display: none !important;
+    }
+}
