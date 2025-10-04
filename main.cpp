@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "renderer.h"
 #include "game_logic.h"
+#include "sound.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     WNDCLASSEX wc;
@@ -57,6 +58,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     EnableOpenGL(hwnd);
     InitializeGame();
     SetCursorPos(400, 300); // Center cursor after init
+    StartMusicThread();
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
@@ -77,6 +79,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // --- Cleanup ---
+    StopMusicThread();
     DisableOpenGL(hwnd);
     VirtualFree(worldData, 0, MEM_RELEASE);
 

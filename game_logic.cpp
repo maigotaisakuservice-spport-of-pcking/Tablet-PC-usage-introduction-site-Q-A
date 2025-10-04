@@ -54,6 +54,12 @@ void InitializeGame() {
 }
 
 void UpdateGame() {
+    // Update game time and sun direction
+    gameTime += 0.0005f; // Controls the speed of the day-night cycle
+    sunDirection[0] = cos(gameTime);
+    sunDirection[1] = 0.8f + sin(gameTime) * 0.4f; // Sun rises and sets
+    sunDirection[2] = sin(gameTime);
+
     // Drone spawning
     if (rand() % 1000 < 5) {
         for (int i = 0; i < MAX_DRONES; ++i) {

@@ -4,12 +4,10 @@
 #include <math.h>
 
 // --- Shadow System ---
-const float SUN_DIRECTION[] = {0.7f, 1.0f, 0.5f};
-
 bool is_in_shadow(float startX, float startY, float startZ) {
-    float rayX = startX + SUN_DIRECTION[0] * 0.51f;
-    float rayY = startY + SUN_DIRECTION[1] * 0.51f;
-    float rayZ = startZ + SUN_DIRECTION[2] * 0.51f;
+    float rayX = startX + sunDirection[0] * 0.51f;
+    float rayY = startY + sunDirection[1] * 0.51f;
+    float rayZ = startZ + sunDirection[2] * 0.51f;
 
     for (int i = 0; i < 25; ++i) {
         int blockX = floor(rayX);
@@ -18,9 +16,9 @@ bool is_in_shadow(float startX, float startY, float startZ) {
 
         if (blockY >= WORLD_HEIGHT) return false;
         if (blockX < 0 || blockX >= WORLD_WIDTH || blockY < 0 || blockZ < 0 || blockZ >= WORLD_DEPTH) {
-             rayX += SUN_DIRECTION[0];
-             rayY += SUN_DIRECTION[1];
-             rayZ += SUN_DIRECTION[2];
+             rayX += sunDirection[0];
+             rayY += sunDirection[1];
+             rayZ += sunDirection[2];
              continue;
         }
 
@@ -29,9 +27,9 @@ bool is_in_shadow(float startX, float startY, float startZ) {
             return true;
         }
 
-        rayX += SUN_DIRECTION[0];
-        rayY += SUN_DIRECTION[1];
-        rayZ += SUN_DIRECTION[2];
+        rayX += sunDirection[0];
+        rayY += sunDirection[1];
+        rayZ += sunDirection[2];
     }
     return false;
 }
@@ -148,7 +146,14 @@ void DisableOpenGL(HWND hwnd) {
 }
 
 void Render() {
-    glClearColor(0.3f, 0.6f, 0.9f, 1.0f);
+    float sun_norm = (sunDirection[1] - 0.4f) / 0.8f;
+    if (sun_norm < 0.0f) sun_norm = 0.0f;
+    if (sun_norm > 1.0f) sun_norm = 1.0f;
+    float r = 0.8f * (1.0f - sun_norm) + 0.3f * sun_norm;
+    float g = 0.4f * (1.0f - sun_norm) + 0.6f * sun_norm;
+    float b = 0.4f * (1.0f - sun_norm) + 0.9f * sun_norm;
+    glClearColor(r, g, b, 1.0f);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_PROJECTION);

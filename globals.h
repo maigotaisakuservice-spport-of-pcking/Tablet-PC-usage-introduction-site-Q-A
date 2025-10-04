@@ -33,4 +33,8 @@ extern int score;
 void str_reverse(char *str);
 void tiny_itoa(int n, char* s);
 
+// Sun direction
+extern float sunDirection[3];
+extern float gameTime;
+
 #endif // GLOBALS_H
