@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include "globals.h"
+#include "character_renderer.h"
 #include <GL/gl.h>
 #include <math.h>
 
@@ -8,12 +9,10 @@ bool is_in_shadow(float startX, float startY, float startZ) {
     float rayX = startX + sunDirection[0] * 0.51f;
     float rayY = startY + sunDirection[1] * 0.51f;
     float rayZ = startZ + sunDirection[2] * 0.51f;
-
     for (int i = 0; i < 25; ++i) {
         int blockX = floor(rayX);
         int blockY = floor(rayY);
         int blockZ = floor(rayZ);
-
         if (blockY >= WORLD_HEIGHT) return false;
         if (blockX < 0 || blockX >= WORLD_WIDTH || blockY < 0 || blockZ < 0 || blockZ >= WORLD_DEPTH) {
              rayX += sunDirection[0];
@@ -21,12 +20,10 @@ bool is_in_shadow(float startX, float startY, float startZ) {
              rayZ += sunDirection[2];
              continue;
         }
-
         int index = blockY * (WORLD_WIDTH * WORLD_DEPTH) + blockZ * WORLD_WIDTH + blockX;
         if (worldData[index] & (1 << 7)) {
             return true;
         }
-
         rayX += sunDirection[0];
         rayY += sunDirection[1];
         rayZ += sunDirection[2];
@@ -115,6 +112,29 @@ void DrawCube(float x, float y, float z, const float* color, bool in_shadow) {
     glEnd();
     glPopMatrix();
 }
+
+void DrawBoss() {
+    if (!boss.active) return;
+    glPushMatrix();
+    glTranslatef(boss.x, boss.y, boss.z);
+    const float bodyColor[] = {0.3f, 0.0f, 0.5f};
+    const float eyeColor[] = {1.0f, 0.0f, 0.0f};
+    glPushMatrix();
+    glScalef(2.0f, 2.0f, 2.0f);
+    DrawCube(0, 0, 0, bodyColor, false);
+    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(0.7f, 0.5f, 1.0f);
+    glScalef(0.4f, 0.4f, 0.4f);
+    DrawCube(0, 0, 0, eyeColor, false);
+    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(-0.7f, 0.5f, 1.0f);
+    glScalef(0.4f, 0.4f, 0.4f);
+    DrawCube(0, 0, 0, eyeColor, false);
+    glPopMatrix();
+    glPopMatrix();
+}
 // --- End Shape Drawing ---
 
 static HDC hDC;
@@ -194,11 +214,62 @@ void Render() {
         }
     }
 
-    const float droneColor[] = {0.2f, 0.2f, 0.2f};
-    for (int i = 0; i < MAX_DRONES; ++i)
-        if (drones[i].active) DrawCube(drones[i].x, drones[i].y, drones[i].z, droneColor, false);
+    // --- Draw Drones ---
+    for (int i = 0; i < MAX_DRONES; ++i) {
+        DrawDrone(drones[i]);
+    }
 
-    // --- Draw Weather Particles ---
+    // --- Draw Zombies ---
+    for (int i = 0; i < MAX_ZOMBIES; ++i) {
+        DrawZombie(zombies[i]);
+    }
+
+    // --- Draw Pigs ---
+    for (int i = 0; i < MAX_PIGS; ++i) {
+        DrawPig(pigs[i]);
+    }
+
+    // --- Draw Cows ---
+    for (int i = 0; i < MAX_COWS; ++i) {
+        DrawCow(cows[i]);
+    }
+
+    DrawBoss();
+
+    // --- Draw Boss AoE Effect ---
+    if (boss.active && boss.aoe_effect_timer > 0) {
+        glPushMatrix();
+        glTranslatef(boss.x, boss.y, boss.z);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        const float aoe_radius = 10.0f;
+        float effect_progress = 1.0f - (boss.aoe_effect_timer / 50.0f);
+        glColor4f(0.8f, 0.2f, 1.0f, 0.5f * (1.0f - effect_progress)); // Fading purple
+
+        // Simple expanding sphere (using a scaled icosphere)
+        glScalef(aoe_radius * effect_progress, aoe_radius * effect_progress, aoe_radius * effect_progress);
+        glBegin(GL_TRIANGLES);
+        for (int i = 0; i < 20; i++) {
+            glVertex3fv(&sphere_vertices[sphere_indices[i][0]][0]);
+            glVertex3fv(&sphere_vertices[sphere_indices[i][1]][0]);
+            glVertex3fv(&sphere_vertices[sphere_indices[i][2]][0]);
+        }
+        glEnd();
+        glDisable(GL_BLEND);
+        glPopMatrix();
+    }
+
+    const float projectileColor[] = {1.0f, 0.5f, 0.0f};
+    for (int i = 0; i < MAX_PROJECTILES; ++i) {
+        if (projectiles[i].active) {
+            glPushMatrix();
+            glTranslatef(projectiles[i].x, projectiles[i].y, projectiles[i].z);
+            glScalef(0.2f, 0.2f, 0.2f);
+            DrawCube(0, 0, 0, projectileColor, false);
+            glPopMatrix();
+        }
+    }
+
     if (currentWeather != WEATHER_CLEAR) {
         glPointSize(currentWeather == WEATHER_RAIN ? 2.0f : 3.0f);
         glEnable(GL_BLEND);
@@ -234,6 +305,80 @@ void Render() {
     tiny_itoa(score, scoreText);
     DrawText(10, 10, "Score:");
     DrawText(70, 10, scoreText);
+
+    char hpText[12];
+    tiny_itoa(playerHP, hpText);
+    DrawText(10, 25, "HP:");
+    DrawText(40, 25, hpText);
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    SwapBuffers(hDC);
+}
+
+void RenderSettingsScreen() {
+    glClearColor(0.2f, 0.1f, 0.1f, 1.0f); // Dark red background
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, 800, 600, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    DrawText(350, 100, "Settings");
+
+    // Music Setting
+    glColor3f(selectedMenuItem == 0 ? 1.0f : 0.7f, selectedMenuItem == 0 ? 1.0f : 0.7f, selectedMenuItem == 0 ? 0.0f : 0.7f);
+    char musicStatus[16];
+    strcpy(musicStatus, "Music: ");
+    strcat(musicStatus, musicEnabled ? "ON" : "OFF");
+    DrawText(320, 250, musicStatus);
+
+    // Back Button
+    glColor3f(selectedMenuItem == 1 ? 1.0f : 0.7f, selectedMenuItem == 1 ? 1.0f : 0.7f, selectedMenuItem == 1 ? 0.0f : 0.7f);
+    DrawText(360, 400, "Back");
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    SwapBuffers(hDC);
+}
+
+void RenderTitleScreen() {
+    glClearColor(0.1f, 0.1f, 0.2f, 1.0f); // Dark blue background
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, 800, 600, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    DrawText(280, 100, "SmallCraft 50K");
+
+    glColor3f(selectedMenuItem == 0 ? 1.0f : 0.7f, selectedMenuItem == 0 ? 1.0f : 0.7f, selectedMenuItem == 0 ? 0.0f : 0.7f);
+    DrawText(350, 250, "Survival");
+
+    glColor3f(selectedMenuItem == 1 ? 1.0f : 0.7f, selectedMenuItem == 1 ? 1.0f : 0.7f, selectedMenuItem == 1 ? 0.0f : 0.7f);
+    DrawText(350, 300, "Creative");
+
+    glColor3f(selectedMenuItem == 2 ? 1.0f : 0.7f, selectedMenuItem == 2 ? 1.0f : 0.7f, selectedMenuItem == 2 ? 0.0f : 0.7f);
+    DrawText(350, 350, "Settings");
+
+    glColor3f(selectedMenuItem == 3 ? 1.0f : 0.7f, selectedMenuItem == 3 ? 1.0f : 0.7f, selectedMenuItem == 3 ? 0.0f : 0.7f);
+    DrawText(350, 400, "Exit");
 
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();

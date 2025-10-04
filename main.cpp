@@ -73,9 +73,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 DispatchMessage(&Msg);
             }
         } else {
-            UpdateGame();
-            UpdatePhysics();
-            Render();
+            if (gameState == STATE_GAME) {
+                UpdateGame();
+                UpdatePhysics();
+                Render();
+            } else if (gameState == STATE_TITLE) {
+                RenderTitleScreen();
+            } else if (gameState == STATE_SETTINGS) {
+                RenderSettingsScreen();
+            }
         }
     }
 

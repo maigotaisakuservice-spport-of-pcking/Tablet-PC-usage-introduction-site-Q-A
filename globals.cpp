@@ -30,17 +30,45 @@ const float colorPalette[9][3] = {
 const int MAX_DRONES = 10;
 Drone drones[MAX_DRONES];
 
+// Zombie
+const int MAX_ZOMBIES = 20;
+Zombie zombies[MAX_ZOMBIES];
+
+// Passive Mobs
+const int MAX_PIGS = 15;
+Pig pigs[MAX_PIGS];
+
+const int MAX_COWS = 15;
+Cow cows[MAX_COWS];
+
 // Score
 int score = 0;
+
+// Player
+int playerHP = 20;
 
 // Sun direction
 float sunDirection[3] = {0.7f, 1.0f, 0.5f};
 float gameTime = 0.0f;
 
+// Game State
+GameState gameState = STATE_TITLE;
+int selectedMenuItem = 0;
+GameMode gameMode = MODE_NORMAL;
+bool musicEnabled = true;
+
+// Boss System
+VoxelOverlord boss;
+
+// Projectile System
+const int MAX_PROJECTILES = 50;
+Projectile projectiles[MAX_PROJECTILES];
+
 // Weather System
 WeatherType currentWeather = WEATHER_CLEAR;
 const int MAX_PARTICLES = 1000;
 Particle particles[MAX_PARTICLES];
+
 
 // --- Ultra-lightweight Integer to String ---
 void str_reverse(char *str) {
