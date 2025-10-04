@@ -37,6 +37,11 @@ int score = 0;
 float sunDirection[3] = {0.7f, 1.0f, 0.5f};
 float gameTime = 0.0f;
 
+// Weather System
+WeatherType currentWeather = WEATHER_CLEAR;
+const int MAX_PARTICLES = 1000;
+Particle particles[MAX_PARTICLES];
+
 // --- Ultra-lightweight Integer to String ---
 void str_reverse(char *str) {
     char *p1, *p2;

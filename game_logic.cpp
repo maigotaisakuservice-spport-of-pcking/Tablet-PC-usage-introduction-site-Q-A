@@ -60,6 +60,45 @@ void UpdateGame() {
     sunDirection[1] = 0.8f + sin(gameTime) * 0.4f; // Sun rises and sets
     sunDirection[2] = sin(gameTime);
 
+    // --- Weather System Update ---
+    static int weather_timer = 0;
+    if (++weather_timer > 6000) { // Change weather every so often
+        weather_timer = 0;
+        int next_weather = (int)currentWeather + 1;
+        currentWeather = (WeatherType)(next_weather > 2 ? 0 : next_weather);
+    }
+
+    // Spawn particles based on weather
+    if (currentWeather != WEATHER_CLEAR) {
+        for (int i = 0; i < 10; ++i) { // Spawn 10 particles per frame
+             for (int p = 0; p < MAX_PARTICLES; ++p) {
+                if (!particles[p].active) {
+                    particles[p].active = true;
+                    particles[p].x = camX + (rand() % 40 - 20);
+                    particles[p].y = camY + 15.0f;
+                    particles[p].z = camZ + (rand() % 40 - 20);
+                    if (currentWeather == WEATHER_RAIN) {
+                        particles[p].vy = -0.5f; particles[p].vx = 0; particles[p].vz = 0;
+                    } else { // Snow
+                        particles[p].vy = -0.05f; particles[p].vx = (rand() % 100 / 100.0f - 0.5f) * 0.05f; particles[p].vz = (rand() % 100 / 100.0f - 0.5f) * 0.05f;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // Update particle physics
+    for (int p = 0; p < MAX_PARTICLES; ++p) {
+        if (particles[p].active) {
+            particles[p].x += particles[p].vx;
+            particles[p].y += particles[p].vy;
+            particles[p].z += particles[p].vz;
+            if (particles[p].y < 0) particles[p].active = false;
+        }
+    }
+    // --- End Weather System Update ---
+
     // Drone spawning
     if (rand() % 1000 < 5) {
         for (int i = 0; i < MAX_DRONES; ++i) {
@@ -82,6 +121,29 @@ void UpdateGame() {
                 drones[i].x += (dx / dist) * speed;
                 drones[i].y += (dy / dist) * speed;
                 drones[i].z += (dz / dist) * speed;
+            }
+        }
+    }
+}
+
+void UpdatePhysics() {
+    // Check a few random columns for unstable blocks to apply gravity
+    for (int i = 0; i < 250; ++i) { // Check 250 random columns per frame
+        int x = rand() % WORLD_WIDTH;
+        int z = rand() % WORLD_DEPTH;
+
+        // Iterate from bottom-up in the column to handle chains of falling blocks
+        for (int y = 1; y < WORLD_HEIGHT; ++y) {
+            int currentIndex = y * (WORLD_WIDTH * WORLD_DEPTH) + z * WORLD_WIDTH + x;
+            unsigned char currentBlock = worldData[currentIndex];
+
+            if (currentBlock & (1 << 7)) { // If there's a block here
+                int belowIndex = (y - 1) * (WORLD_WIDTH * WORLD_DEPTH) + z * WORLD_WIDTH + x;
+                if (!(worldData[belowIndex] & (1 << 7))) { // And the one below is air
+                    // Make the block fall
+                    worldData[belowIndex] = currentBlock;
+                    worldData[currentIndex] = 0;
+                }
             }
         }
     }

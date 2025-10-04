@@ -37,4 +37,20 @@ void tiny_itoa(int n, char* s);
 extern float sunDirection[3];
 extern float gameTime;
 
+// Weather System
+enum WeatherType {
+    WEATHER_CLEAR,
+    WEATHER_RAIN,
+    WEATHER_SNOW
+};
+struct Particle {
+    float x, y, z;
+    float vx, vy, vz;
+    bool active;
+};
+extern WeatherType currentWeather;
+extern const int MAX_PARTICLES;
+extern Particle particles[];
+
+
 #endif // GLOBALS_H

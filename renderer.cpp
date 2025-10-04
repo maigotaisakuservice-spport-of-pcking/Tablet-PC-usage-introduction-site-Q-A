@@ -198,6 +198,23 @@ void Render() {
     for (int i = 0; i < MAX_DRONES; ++i)
         if (drones[i].active) DrawCube(drones[i].x, drones[i].y, drones[i].z, droneColor, false);
 
+    // --- Draw Weather Particles ---
+    if (currentWeather != WEATHER_CLEAR) {
+        glPointSize(currentWeather == WEATHER_RAIN ? 2.0f : 3.0f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBegin(GL_POINTS);
+        for (int i = 0; i < MAX_PARTICLES; i++) {
+            if (particles[i].active) {
+                if (currentWeather == WEATHER_RAIN) glColor3f(0.6f, 0.7f, 1.0f);
+                else glColor3f(1.0f, 1.0f, 1.0f);
+                glVertex3f(particles[i].x, particles[i].y, particles[i].z);
+            }
+        }
+        glEnd();
+        glDisable(GL_BLEND);
+    }
+
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
