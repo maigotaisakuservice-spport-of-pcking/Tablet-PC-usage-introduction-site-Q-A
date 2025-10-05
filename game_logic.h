@@ -2,6 +2,9 @@
 #define GAME_LOGIC_H
 
 #include <windows.h>
+#include "character.h"
+#include "character_renderer.h"
+
 
 void InitializeGame();
 void UpdateGame();

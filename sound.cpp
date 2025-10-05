@@ -1,3 +1,4 @@
+#include "globals.h"
 #include "sound.h"
 #include <windows.h>
 #include <time.h>
@@ -24,10 +25,14 @@ DWORD WINAPI MusicLoop(LPVOID lpParam) {
     const int scale[] = {261, 293, 329, 349, 392, 440, 493, 523}; // C Major scale
 
     while(music_thread_running) {
-        int note = scale[rand() % 8];
-        int duration = 150 + (rand() % 200);
-        Beep(note, duration);
-        Sleep(200 + (rand() % 300));
+        if(musicEnabled) {
+            int note = scale[rand() % 8];
+            int duration = 150 + (rand() % 200);
+            Beep(note, duration);
+            Sleep(200 + (rand() % 300));
+        } else {
+            Sleep(500); // Sleep if music is disabled
+        }
     }
     return 0;
 }

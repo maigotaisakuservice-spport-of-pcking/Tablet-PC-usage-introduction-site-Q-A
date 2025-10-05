@@ -8,9 +8,8 @@ void DisableOpenGL(HWND hwnd);
 void Render();
 void RenderTitleScreen();
 void RenderSettingsScreen();
-
-// Drawing Primitives
-void DrawCube(float x, float y, float z, const float* color, bool in_shadow);
-void DrawSphere(float x, float y, float z, const float* color, bool in_shadow);
+void RenderWorldSelectScreen();
+void RenderCraftingScreen();
+void RenderHotbar();
 
 #endif // RENDERER_H

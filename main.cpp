@@ -41,18 +41,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // --- Memory and Initialization ---
-    // Memory limit set to 200MB as requested
-    const SIZE_T MEMORY_SIZE = 200 * 1024 * 1024;
-    worldData = (char*)VirtualAlloc(NULL, MEMORY_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    // Allocate memory for the world data
+    worldData = (unsigned char*)VirtualAlloc(NULL, WORLD_WIDTH * WORLD_HEIGHT * WORLD_DEPTH, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (worldData == NULL) {
-        MessageBox(NULL, "Memory Allocation Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
-        return 0;
-    }
-
-    if ((long long)WORLD_WIDTH * WORLD_HEIGHT * WORLD_DEPTH > MEMORY_SIZE) {
-         MessageBox(NULL, "World size exceeds allocated memory!", "Error!", MB_ICONEXCLAMATION | MB_OK);
-         VirtualFree(worldData, 0, MEM_RELEASE);
-         return 0;
+        MessageBox(NULL, "Failed to allocate world memory!", "Error", MB_OK | MB_ICONERROR);
+        return 1;
     }
 
     EnableOpenGL(hwnd);
@@ -81,6 +74,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 RenderTitleScreen();
             } else if (gameState == STATE_SETTINGS) {
                 RenderSettingsScreen();
+            } else if (gameState == STATE_WORLD_SELECT) {
+                RenderWorldSelectScreen();
+            } else if (gameState == STATE_CRAFTING) {
+                RenderCraftingScreen();
             }
         }
     }

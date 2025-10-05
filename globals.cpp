@@ -1,99 +1,92 @@
 #include "globals.h"
-#include <string.h> // For strlen in str_reverse
 
-// World constants and data pointer
-const int WORLD_WIDTH = 512;
-const int WORLD_HEIGHT = 128;
-const int WORLD_DEPTH = 512;
-char* worldData = nullptr;
-
-// Camera variables
-float camX = 0.0f, camY = 30.0f, camZ = 5.0f;
-float camYaw = 0.0f, camPitch = 0.0f;
-
-// Build mode
+// --- Global Variables (definitions) ---
+unsigned char* worldData = NULL;
+float camX = WORLD_WIDTH / 2.0f;
+float camY = WORLD_HEIGHT;
+float camZ = WORLD_DEPTH / 2.0f;
+float camYaw = 0.0f;
+float camPitch = 0.0f;
+bool keys[256] = {false};
 bool isSphereMode = false;
-int currentColorIndex = 0; // Default to 0 (Red)
-const float colorPalette[9][3] = {
-    {1.0f, 0.0f, 0.0f}, // 1: Red
-    {0.0f, 1.0f, 0.0f}, // 2: Green
-    {0.0f, 0.0f, 1.0f}, // 3: Blue
-    {1.0f, 1.0f, 0.0f}, // 4: Yellow
-    {1.0f, 0.0f, 1.0f}, // 5: Magenta
-    {0.0f, 1.0f, 1.0f}, // 6: Cyan
-    {1.0f, 1.0f, 1.0f}, // 7: White
-    {0.5f, 0.5f, 0.5f}, // 8: Gray
-    {0.5f, 0.2f, 0.0f}  // 9: Brown
+int currentColorIndex = 0;
+int playerHP = 20;
+int score = 0;
+Drone drones[MAX_DRONES];
+Zombie zombies[MAX_ZOMBIES];
+Pig pigs[MAX_PIGS];
+Cow cows[MAX_COWS];
+Boss boss;
+Particle particles[MAX_PARTICLES];
+Projectile projectiles[MAX_PROJECTILES];
+GameState gameState = STATE_TITLE;
+GameMode gameMode = MODE_NORMAL;
+WeatherType currentWeather = WEATHER_CLEAR;
+float gameTime = 0.75f; // Start in the morning
+float sunDirection[3] = {0.0f, 1.0f, 0.0f};
+char world_names[MAX_WORLDS][32];
+int world_count = 0;
+char currentWorldName[32];
+int selectedMenuItem = 0;
+bool musicEnabled = true;
+InventorySlot inventory[INVENTORY_SLOTS];
+int active_inventory_slot = 0;
+int mouseX = 0;
+int mouseY = 0;
+
+
+// --- Color Palette Definition ---
+const float color_black[] = {0.0f, 0.0f, 0.0f};
+const float color_white[] = {1.0f, 1.0f, 1.0f};
+const float color_red[] = {1.0f, 0.0f, 0.0f};
+const float color_green[] = {0.0f, 1.0f, 0.0f};
+const float color_blue[] = {0.0f, 0.0f, 1.0f};
+const float color_yellow[] = {1.0f, 1.0f, 0.0f};
+const float color_cyan[] = {0.0f, 1.0f, 1.0f};
+const float color_magenta[] = {1.0f, 0.0f, 1.0f};
+const float color_grass[] = {0.1f, 0.8f, 0.2f};
+const float color_dirt[] = {0.6f, 0.4f, 0.2f};
+const float color_gray[] = {0.5f, 0.5f, 0.5f};
+const float color_sand[] = {0.9f, 0.9f, 0.7f};
+const float color_wood[] = {0.4f, 0.3f, 0.1f};
+const float color_leaves[] = {0.1f, 0.6f, 0.1f};
+const float color_water[] = {0.2f, 0.4f, 0.9f};
+const float color_sandstone[] = {0.8f, 0.8f, 0.6f};
+const float color_green_dark[] = {0.0f, 0.4f, 0.0f};
+const float color_blue_dark[] = {0.0f, 0.0f, 0.5f};
+const float color_brown[] = {0.35f, 0.25f, 0.1f};
+const float color_gray_dark[] = {0.3f, 0.3f, 0.3f};
+const float color_gray_light[] = {0.8f, 0.8f, 0.8f};
+const float color_diamond[] = {0.6f, 0.9f, 1.0f};
+
+const float* colorPalette[COLOR_COUNT] = {
+    color_black, color_white, color_red, color_green, color_blue,
+    color_yellow, color_cyan, color_magenta,
+    color_grass, color_dirt, color_gray, color_sand, color_wood,
+    color_leaves, color_water, color_sandstone, color_green_dark,
+    color_blue_dark, color_brown, color_gray_dark, color_gray_light,
+    color_diamond
 };
 
-// Voxel Drone
-const int MAX_DRONES = 10;
-Drone drones[MAX_DRONES];
+// --- Crafting System Globals (definitions) ---
+InventorySlot crafting_grid[CRAFTING_GRID_SIZE];
+InventorySlot crafting_output;
+InventorySlot held_item = { ITEM_NONE, 0 };
+Recipe recipes[MAX_RECIPES];
+int recipe_count = 0;
 
-// Zombie
-const int MAX_ZOMBIES = 20;
-Zombie zombies[MAX_ZOMBIES];
+void InitializeRecipes() {
+    // Recipe 1: Diamond Pickaxe
+    // Requires: 1 Iron Pickaxe (center), 3 Diamonds (surrounding)
+    recipes[0].ingredients[0] = ITEM_IRON_PICKAXE;
+    recipes[0].ingredients[1] = ITEM_DIAMOND;
+    recipes[0].ingredients[2] = ITEM_DIAMOND;
+    recipes[0].ingredients[3] = ITEM_DIAMOND;
+    for(int i = 4; i < CRAFTING_GRID_SIZE; ++i) recipes[0].ingredients[i] = ITEM_NONE;
+    recipes[0].output = ITEM_DIAMOND_PICKAXE;
+    recipes[0].output_count = 1;
 
-// Passive Mobs
-const int MAX_PIGS = 15;
-Pig pigs[MAX_PIGS];
+    // Add more recipes here...
 
-const int MAX_COWS = 15;
-Cow cows[MAX_COWS];
-
-// Score
-int score = 0;
-
-// Player
-int playerHP = 20;
-
-// Sun direction
-float sunDirection[3] = {0.7f, 1.0f, 0.5f};
-float gameTime = 0.0f;
-
-// Game State
-GameState gameState = STATE_TITLE;
-int selectedMenuItem = 0;
-GameMode gameMode = MODE_NORMAL;
-bool musicEnabled = true;
-
-// Boss System
-VoxelOverlord boss;
-
-// Projectile System
-const int MAX_PROJECTILES = 50;
-Projectile projectiles[MAX_PROJECTILES];
-
-// Weather System
-WeatherType currentWeather = WEATHER_CLEAR;
-const int MAX_PARTICLES = 1000;
-Particle particles[MAX_PARTICLES];
-
-
-// --- Ultra-lightweight Integer to String ---
-void str_reverse(char *str) {
-    char *p1, *p2;
-    if (!str || !*str) return;
-    for (p1 = str, p2 = str + strlen(str) - 1; p2 > p1; ++p1, --p2) {
-        *p1 ^= *p2;
-        *p2 ^= *p1;
-        *p1 ^= *p2;
-    }
-}
-
-void tiny_itoa(int n, char* s) {
-    int i = 0;
-    int sign = n;
-    if (sign < 0) n = -n;
-    if (n == 0) {
-        s[i++] = '0';
-    } else {
-        while (n > 0) {
-            s[i++] = n % 10 + '0';
-            n /= 10;
-        }
-    }
-    if (sign < 0) s[i++] = '-';
-    s[i] = '\0';
-    str_reverse(s);
+    recipe_count = 1; // We have one recipe so far
 }

@@ -1,143 +1,132 @@
 #include "character_renderer.h"
-#include "renderer.h" // For DrawCube
+#include "globals.h" // For draw_cube and colors
+#include <windows.h>
 #include <GL/gl.h>
-#include <math.h>
+#include <cmath> // For sin, fabs
 
-// Helper function to draw a single part of a character
-void DrawVoxelPart(const VoxelPart& part) {
+// Generic function to render a single part of a character
+void render_character_part(const VoxelPart& part, const CharacterAnimation& anim, float pos_x, float pos_y, float pos_z, float body_rot_y) {
     glPushMatrix();
+
+    // 1. Move to the character's base position and apply body rotation
+    glTranslatef(pos_x, pos_y, pos_z);
+    glRotatef(body_rot_y, 0.0f, 1.0f, 0.0f);
+
+    // 2. Apply the part's specific offset from the character's center
     glTranslatef(part.offset_x, part.offset_y, part.offset_z);
-    glRotatef(part.rot_x, 1.0f, 0.0f, 0.0f);
-    glRotatef(part.rot_y, 0.0f, 1.0f, 0.0f);
-    glRotatef(part.rot_z, 0.0f, 0.0f, 1.0f);
+
+    // 3. Apply animation rotation
+    // rot_x is used for swinging (arms/legs). Value is 1.0 or -1.0 to control direction.
+    if (fabs(part.rot_x) > 0.5f) {
+        glRotatef(sin(anim.step_cycle) * anim.swing_angle * part.rot_x, 1.0f, 0.0f, 0.0f);
+    }
+    // rot_y is used for spinning (propellers)
+    if (fabs(part.rot_y) > 0.5f) {
+        glRotatef(anim.step_cycle * 200.0f, 0.0f, 1.0f, 0.0f);
+    }
+
+    // 4. Apply the part's base rotation and scale
+    glRotatef(part.rot_z, 0.0f, 0.0f, 1.0f); // Base rotation if any
     glScalef(part.scale_x, part.scale_y, part.scale_z);
-    DrawCube(0, 0, 0, part.color, false); // Assuming parts are not in shadow by default
-    glPopMatrix();
-}
 
-void DrawZombie(const Zombie& zombie) {
-    if (!zombie.active) return;
-
-    glPushMatrix();
-    glTranslatef(zombie.x, zombie.y, zombie.z);
-
-    // Define Zombie colors
-    const float skinColor[] = {0.2f, 0.6f, 0.3f}; // Greenish
-    const float shirtColor[] = {0.2f, 0.3f, 0.8f}; // Blue
-    const float pantsColor[] = {0.1f, 0.1f, 0.4f}; // Dark Blue
-
-    // --- Define Zombie Parts ---
-    VoxelPart head = {0.0f, 1.0f, 0.0f, 0.5f, 0.5f, 0.5f, 0, 0, 0, skinColor};
-    VoxelPart torso = {0.0f, 0.25f, 0.0f, 0.8f, 1.0f, 0.4f, 0, 0, 0, shirtColor};
-
-    // Animated Arms
-    VoxelPart leftArm = {0.6f, 0.25f, 0.0f, 0.3f, 1.0f, 0.3f, -zombie.anim.swing_angle, 0, 0, skinColor};
-    VoxelPart rightArm = {-0.6f, 0.25f, 0.0f, 0.3f, 1.0f, 0.3f, zombie.anim.swing_angle, 0, 0, skinColor};
-
-    // Animated Legs
-    VoxelPart leftLeg = {0.25f, -0.75f, 0.0f, 0.4f, 1.0f, 0.4f, zombie.anim.swing_angle, 0, 0, pantsColor};
-    VoxelPart rightLeg = {-0.25f, -0.75f, 0.0f, 0.4f, 1.0f, 0.4f, -zombie.anim.swing_angle, 0, 0, pantsColor};
-
-    // --- Draw Parts ---
-    DrawVoxelPart(head);
-    DrawVoxelPart(torso);
-    DrawVoxelPart(leftArm);
-    DrawVoxelPart(rightArm);
-    DrawVoxelPart(leftLeg);
-    DrawVoxelPart(rightLeg);
+    // 5. Draw the cube
+    glColor3fv(part.color);
+    draw_cube(1.0f);
 
     glPopMatrix();
 }
 
-void DrawPig(const Pig& pig) {
-    if (!pig.active) return;
+// Specific definition and rendering for a Voxel Zombie
+void render_voxel_zombie(float x, float y, float z, float rot_y, const CharacterAnimation& anim) {
+    const VoxelPart zombie_parts[] = {
+        // Torso
+        {0.0f, 0.0f, 0.0f,   0.5f, 0.7f, 0.25f,  0.0f, 0.0f, 0.0f, colorPalette[COLOR_GREEN_DARK]},
+        // Head
+        {0.0f, 0.6f, 0.0f,   0.4f, 0.4f, 0.4f,   0.0f, 0.0f, 0.0f, colorPalette[COLOR_GREEN]},
+        // Left Arm (swings)
+        {-0.45f, 0.0f, 0.0f, 0.2f, 0.6f, 0.2f,  1.0f, 0.0f, 0.0f, colorPalette[COLOR_BLUE_DARK]},
+        // Right Arm (swings, opposite phase)
+        {0.45f, 0.0f, 0.0f,  0.2f, 0.6f, 0.2f,  -1.0f, 0.0f, 0.0f, colorPalette[COLOR_BLUE_DARK]},
+        // Left Leg
+        {-0.15f, -0.7f, 0.0f, 0.2f, 0.7f, 0.2f,  -1.0f, 0.0f, 0.0f, colorPalette[COLOR_BROWN]},
+        // Right Leg
+        {0.15f, -0.7f, 0.0f,  0.2f, 0.7f, 0.2f,  1.0f, 0.0f, 0.0f, colorPalette[COLOR_BROWN]}
+    };
 
-    glPushMatrix();
-    glTranslatef(pig.x, pig.y, pig.z);
-
-    const float bodyColor[] = {1.0f, 0.7f, 0.8f}; // Pink
-    const float snoutColor[] = {0.9f, 0.6f, 0.7f}; // Darker Pink
-
-    // --- Define Pig Parts ---
-    VoxelPart body = {0.0f, 0.0f, 0.0f, 1.5f, 0.8f, 0.8f, 0, 0, 0, bodyColor};
-    VoxelPart head = {0.9f, 0.2f, 0.0f, 0.6f, 0.6f, 0.6f, 0, 0, 0, bodyColor};
-    VoxelPart snout = {1.2f, 0.15f, 0.0f, 0.2f, 0.3f, 0.3f, 0, 0, 0, snoutColor};
-
-    // Animated Legs
-    VoxelPart leg1 = {0.6f, -0.6f, 0.3f, 0.3f, 0.5f, 0.3f, pig.anim.swing_angle, 0, 0, bodyColor};
-    VoxelPart leg2 = {-0.6f, -0.6f, 0.3f, 0.3f, 0.5f, 0.3f, -pig.anim.swing_angle, 0, 0, bodyColor};
-    VoxelPart leg3 = {0.6f, -0.6f, -0.3f, 0.3f, 0.5f, 0.3f, -pig.anim.swing_angle, 0, 0, bodyColor};
-    VoxelPart leg4 = {-0.6f, -0.6f, -0.3f, 0.3f, 0.5f, 0.3f, pig.anim.swing_angle, 0, 0, bodyColor};
-
-    // --- Draw Parts ---
-    DrawVoxelPart(body);
-    DrawVoxelPart(head);
-    DrawVoxelPart(snout);
-    DrawVoxelPart(leg1);
-    DrawVoxelPart(leg2);
-    DrawVoxelPart(leg3);
-    DrawVoxelPart(leg4);
-
-    glPopMatrix();
+    int num_parts = sizeof(zombie_parts) / sizeof(VoxelPart);
+    for (int i = 0; i < num_parts; ++i) {
+        render_character_part(zombie_parts[i], anim, x, y, z, rot_y);
+    }
 }
 
-void DrawCow(const Cow& cow) {
-    if (!cow.active) return;
+// Specific definition and rendering for an Advanced Drone
+void render_advanced_drone(float x, float y, float z, float rot_y, const CharacterAnimation& anim) {
+     const VoxelPart drone_parts[] = {
+        // Main Body
+        {0.0f, 0.0f, 0.0f,   0.6f, 0.4f, 0.6f,  0.0f, 0.0f, 0.0f, colorPalette[COLOR_GRAY_DARK]},
+        // "Eye"
+        {0.0f, 0.05f, -0.31f, 0.1f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, colorPalette[COLOR_RED]},
+        // Top Propeller (spins)
+        {0.0f, 0.3f, 0.0f,   0.8f, 0.05f, 0.1f, 0.0f, 1.0f, 0.0f, colorPalette[COLOR_GRAY_LIGHT]},
+        // Bottom Propeller (spins)
+        {0.0f, -0.3f, 0.0f,  0.1f, 0.05f, 0.8f, 0.0f, 1.0f, 0.0f, colorPalette[COLOR_GRAY_LIGHT]}
+    };
 
-    glPushMatrix();
-    glTranslatef(cow.x, cow.y, cow.z);
-
-    const float bodyColor[] = {1.0f, 1.0f, 1.0f}; // White
-    const float spotColor[] = {0.1f, 0.1f, 0.1f}; // Black
-    const float hornColor[] = {0.8f, 0.8f, 0.7f}; // Light Gray
-
-    // --- Define Cow Parts ---
-    VoxelPart body = {0.0f, 0.0f, 0.0f, 1.8f, 1.0f, 1.0f, 0, 0, 0, bodyColor};
-    VoxelPart head = {1.1f, 0.3f, 0.0f, 0.7f, 0.7f, 0.7f, 0, 0, 0, bodyColor};
-    VoxelPart spot1 = {-0.5f, 0.2f, 0.4f, 0.5f, 0.5f, 0.1f, 0, 0, 0, spotColor};
-    VoxelPart spot2 = {0.4f, 0.1f, -0.4f, 0.6f, 0.4f, 0.1f, 0, 0, 0, spotColor};
-    VoxelPart horn1 = {1.2f, 0.7f, 0.2f, 0.1f, 0.3f, 0.1f, 0, 0, -20, hornColor};
-    VoxelPart horn2 = {1.2f, 0.7f, -0.2f, 0.1f, 0.3f, 0.1f, 0, 0, 20, hornColor};
-
-    // Animated Legs
-    VoxelPart leg1 = {0.7f, -0.7f, 0.4f, 0.4f, 0.6f, 0.4f, cow.anim.swing_angle, 0, 0, bodyColor};
-    VoxelPart leg2 = {-0.7f, -0.7f, 0.4f, 0.4f, 0.6f, 0.4f, -cow.anim.swing_angle, 0, 0, bodyColor};
-    VoxelPart leg3 = {0.7f, -0.7f, -0.4f, 0.4f, 0.6f, 0.4f, -cow.anim.swing_angle, 0, 0, bodyColor};
-    VoxelPart leg4 = {-0.7f, -0.7f, -0.4f, 0.4f, 0.6f, 0.4f, cow.anim.swing_angle, 0, 0, bodyColor};
-
-    // --- Draw Parts ---
-    DrawVoxelPart(body);
-    DrawVoxelPart(head);
-    DrawVoxelPart(spot1);
-    DrawVoxelPart(spot2);
-    DrawVoxelPart(horn1);
-    DrawVoxelPart(horn2);
-    DrawVoxelPart(leg1);
-    DrawVoxelPart(leg2);
-    DrawVoxelPart(leg3);
-    DrawVoxelPart(leg4);
-
-    glPopMatrix();
+    int num_parts = sizeof(drone_parts) / sizeof(VoxelPart);
+    for (int i = 0; i < num_parts; ++i) {
+        render_character_part(drone_parts[i], anim, x, y, z, rot_y);
+    }
 }
 
+// Specific definition and rendering for a Pig
+void render_pig(float x, float y, float z, float rot_y, const CharacterAnimation& anim) {
+    const VoxelPart pig_parts[] = {
+        // Body
+        {0.0f, 0.0f, 0.0f,   0.8f, 0.5f, 0.4f,   0.0f, 0.0f, 0.0f, colorPalette[COLOR_MAGENTA]},
+        // Head
+        {-0.6f, 0.1f, 0.0f,  0.4f, 0.4f, 0.35f,  0.0f, 0.0f, 0.0f, colorPalette[COLOR_MAGENTA]},
+        // Snout
+        {-0.85f, 0.05f, 0.0f, 0.1f, 0.15f, 0.15f, 0.0f, 0.0f, 0.0f, colorPalette[COLOR_RED]},
+        // Front-Left Leg
+        {-0.3f, -0.4f, 0.15f, 0.15f, 0.3f, 0.15f, 1.0f, 0.0f, 0.0f, colorPalette[COLOR_MAGENTA]},
+        // Front-Right Leg
+        {-0.3f, -0.4f, -0.15f,0.15f, 0.3f, 0.15f, 1.0f, 0.0f, 0.0f, colorPalette[COLOR_MAGENTA]},
+        // Back-Left Leg
+        {0.3f, -0.4f, 0.15f, 0.15f, 0.3f, 0.15f, -1.0f, 0.0f, 0.0f, colorPalette[COLOR_MAGENTA]},
+        // Back-Right Leg
+        {0.3f, -0.4f, -0.15f, 0.15f, 0.3f, 0.15f, -1.0f, 0.0f, 0.0f, colorPalette[COLOR_MAGENTA]}
+    };
 
-void DrawDrone(const Drone& drone) {
-    if (!drone.active) return;
+    int num_parts = sizeof(pig_parts) / sizeof(VoxelPart);
+    for (int i = 0; i < num_parts; ++i) {
+        render_character_part(pig_parts[i], anim, x, y, z, rot_y);
+    }
+}
 
-    glPushMatrix();
-    glTranslatef(drone.x, drone.y, drone.z);
-    glRotatef(drone.anim.swing_angle, 0.0f, 1.0f, 0.0f); // Hover rotation
+// Specific definition and rendering for a Cow
+void render_cow(float x, float y, float z, float rot_y, const CharacterAnimation& anim) {
+    const VoxelPart cow_parts[] = {
+        // Body
+        {0.0f, 0.0f, 0.0f,   1.0f, 0.6f, 0.5f,   0.0f, 0.0f, 0.0f, colorPalette[COLOR_WHITE]},
+        // Head
+        {-0.8f, 0.3f, 0.0f,  0.4f, 0.4f, 0.4f,   0.0f, 0.0f, 0.0f, colorPalette[COLOR_WHITE]},
+        // Snout
+        {-1.05f, 0.2f, 0.0f, 0.1f, 0.2f, 0.3f, 0.0f, 0.0f, 0.0f, colorPalette[COLOR_BROWN]},
+        // Horns
+        {-0.8f, 0.6f, 0.15f, 0.1f, 0.2f, 0.1f, 0.0f, 0.0f, 0.0f, colorPalette[COLOR_GRAY_LIGHT]},
+        {-0.8f, 0.6f, -0.15f,0.1f, 0.2f, 0.1f, 0.0f, 0.0f, 0.0f, colorPalette[COLOR_GRAY_LIGHT]},
+        // Patches on body
+        {0.2f, 0.1f, 0.2f, 0.3f, 0.3f, 0.2f, 0.0f, 0.0f, 0.0f, colorPalette[COLOR_BLACK]},
+        {-0.3f, 0.0f, -0.2f, 0.4f, 0.25f, 0.2f, 0.0f, 0.0f, 0.0f, colorPalette[COLOR_BLACK]},
+        // Legs
+        {-0.4f, -0.5f, 0.2f, 0.2f, 0.4f, 0.2f, 1.0f, 0.0f, 0.0f, colorPalette[COLOR_WHITE]},
+        {-0.4f, -0.5f, -0.2f,0.2f, 0.4f, 0.2f, 1.0f, 0.0f, 0.0f, colorPalette[COLOR_WHITE]},
+        {0.4f, -0.5f, 0.2f, 0.2f, 0.4f, 0.2f, -1.0f, 0.0f, 0.0f, colorPalette[COLOR_WHITE]},
+        {0.4f, -0.5f, -0.2f, 0.2f, 0.4f, 0.2f, -1.0f, 0.0f, 0.0f, colorPalette[COLOR_WHITE]}
+    };
 
-    const float bodyColor[] = {0.2f, 0.2f, 0.2f};
-    const float wingColor[] = {0.4f, 0.4f, 0.4f};
-
-    VoxelPart body = {0,0,0, 1,1,1, 0,0,0, bodyColor};
-    VoxelPart wing1 = {0.8f, 0, 0, 0.8f, 0.1f, 0.1f, 0,0,0, wingColor};
-    VoxelPart wing2 = {-0.8f, 0, 0, 0.8f, 0.1f, 0.1f, 0,0,0, wingColor};
-
-    DrawVoxelPart(body);
-    DrawVoxelPart(wing1);
-    DrawVoxelPart(wing2);
-
-    glPopMatrix();
+    int num_parts = sizeof(cow_parts) / sizeof(VoxelPart);
+    for (int i = 0; i < num_parts; ++i) {
+        render_character_part(cow_parts[i], anim, x, y, z, rot_y);
+    }
 }
