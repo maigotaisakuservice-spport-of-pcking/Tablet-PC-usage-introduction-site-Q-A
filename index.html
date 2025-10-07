@@ -80,30 +80,22 @@
                     <div class="analytics-cards-container">
                         <div class="card analytics-card" id="views-ranking-card">
                             <h3>視聴回数ランキング (上位5件)</h3>
-                            <ul class="ranking-list">
-                                <!-- 視聴回数ランキングがここに表示されます -->
-                            </ul>
+                            <ul class="ranking-list"></ul>
                             <button class="btn-show-more" style="display: none;">もっと見る</button>
                         </div>
                         <div class="card analytics-card" id="watch-time-ranking-card">
                             <h3>総再生時間ランキング (上位5件)</h3>
-                            <ul class="ranking-list">
-                                <!-- 総再生時間ランキングがここに表示されます -->
-                            </ul>
+                            <ul class="ranking-list"></ul>
                             <button class="btn-show-more" style="display: none;">もっと見る</button>
                         </div>
                         <div class="card analytics-card" id="likes-ranking-card">
                             <h3>高評価数ランキング (上位5件)</h3>
-                            <ul class="ranking-list">
-                                <!-- 高評価数ランキングがここに表示されます -->
-                            </ul>
+                            <ul class="ranking-list"></ul>
                             <button class="btn-show-more" style="display: none;">もっと見る</button>
                         </div>
                         <div class="card analytics-card" id="comments-ranking-card">
                             <h3>コメント数ランキング (上位5件)</h3>
-                            <ul class="ranking-list">
-                                <!-- コメント数ランキングがここに表示されます -->
-                            </ul>
+                            <ul class="ranking-list"></ul>
                             <button class="btn-show-more" style="display: none;">もっと見る</button>
                         </div>
                     </div>
@@ -111,10 +103,7 @@
                 <div id="videos-content" class="tab-content">
                     <h2>動画の管理</h2>
                     <p>チャンネルにアップロードされた動画の一覧です。説明の編集や公開状況の変更、削除ができます。</p>
-                    <div id="video-list-container">
-                        <!-- 動画リストがここにJavaScriptによってレンダリングされます -->
-                        <p class="loading-message">動画リストを読み込んでいます...</p>
-                    </div>
+                    <div id="video-list-container"></div>
                 </div>
                 <div id="revenue-content" class="tab-content">
                     <h2>収益の確認</h2>
@@ -149,10 +138,7 @@
                 <div id="comments-content" class="tab-content">
                     <h2>コメント返信支援</h2>
                     <p>チャンネルに寄せられた最新のコメントを確認し、AIによる返信文の生成を活用できます。</p>
-                    <div id="comment-list-container">
-                        <p class="loading-message">最新のコメントを読み込んでいます...</p>
-                        <!-- コメントリストがここにJavaScriptによってレンダリングされます -->
-                    </div>
+                    <div id="comment-list-container"></div>
                 </div>
                 <div id="creation-support-content" class="tab-content">
                     <h2>動画作成支援</h2>
@@ -166,16 +152,13 @@
                         </div>
                         <div id="ai-ideas-container" style="display: none;">
                             <h4>AIからの提案</h4>
-                            <div id="ai-ideas-content">
-                                <!-- AIによる提案がここに表示されます -->
-                            </div>
+                            <div id="ai-ideas-content"></div>
                         </div>
                     </div>
                 </div>
                 <div id="support-content" class="tab-content">
                     <h2>サポート & ヘルプ</h2>
                     <p>このツールの使い方や、YouTubeチャンネル運営に関するヒントをまとめました。</p>
-
                     <div class="support-section">
                         <h3>このツールの使い方</h3>
                         <div class="faq-item">
@@ -184,10 +167,9 @@
                         </div>
                         <div class="faq-item">
                             <h4>データはいつ更新されるの？</h4>
-                            <p>データは、ページにログイン（または再読み込み）した直後と、その後はページを開いている限り1時間ごとに自動で更新されます。手動で更新する機能も将来的に追加予定です。</p>
+                            <p>データは、ページにログイン（または再読み込み）した直後と、その後はページを開いている限り1時間ごとに自動で更新されます。</p>
                         </div>
                     </div>
-
                     <div class="support-section">
                         <h3>RPMについて</h3>
                         <div class="faq-item">
@@ -199,7 +181,6 @@
                             <p>AIはあなたのチャンネルの実際の収益パフォーマンス（取得可能な場合）を分析し、最適なRPMを自動で推定・設定します。収益化前などでデータが不足している場合や、特定の目標値を設定してシミュレーションしたい場合は、手動でRPMを自由に変更することが可能です。</p>
                         </div>
                     </div>
-
                     <div class="support-section">
                         <h3>YouTubeチャンネル運営のヒント</h3>
                         <div class="faq-item">

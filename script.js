@@ -1,6 +1,5 @@
 // AI Creator Dashboard Scripts (v7 - Final Corrected Analytics with Data API)
 
-
 // --- Configuration ---
 const CLIENT_ID = "556927001491-l2b8t4hoqllj3np998t4l49agt02tvfv.apps.googleusercontent.com";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbz9l_Ys_6C5TM-HXIy_mGu0zJKUMrwDO2kVrw_h7rFM9-fCWaFHpr5GXSHDmWoJyi5frw/exec";
@@ -22,12 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         googleLoginBtn: document.getElementById('google-login-btn'),
         logoutBtn: document.getElementById('logout-btn'),
         tabNav: document.querySelector('.tab-nav'),
-        tabContents: document.querySelectorAll('.tab-content'),
-        tabLinks: document.querySelectorAll('.tab-link'),
         userNameDisplay: document.getElementById('user-name-display'),
-        applyRpmBtn: document.getElementById('apply-rpm-btn'),
-        resetRpmBtn: document.getElementById('reset-rpm-btn'),
-        manualRpmInput: document.getElementById('manual-rpm-input'),
         videoListContainer: document.getElementById('video-list-container'),
         analyticsContainer: document.getElementById('analytics-content'),
         commentListContainer: document.getElementById('comment-list-container'),
@@ -59,15 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ui.tabNav) ui.tabNav.addEventListener('click', (e) => {
         const clickedTab = e.target.closest('.tab-link');
         if (clickedTab) {
-            ui.tabLinks.forEach(link => link.classList.remove('active'));
-            ui.tabContents.forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             clickedTab.classList.add('active');
             document.getElementById(clickedTab.dataset.tab)?.classList.add('active');
         }
     });
 
-    if(ui.applyRpmBtn) ui.applyRpmBtn.addEventListener('click', () => {
-        const newRpm = parseFloat(ui.manualRpmInput.value);
+    const applyRpmBtn = document.getElementById('apply-rpm-btn');
+    if(applyRpmBtn) applyRpmBtn.addEventListener('click', () => {
+        const newRpm = parseFloat(document.getElementById('manual-rpm-input').value);
         if (!isNaN(newRpm) && newRpm >= 0) {
             currentRpm = newRpm;
             isRpmAiSet = false;
@@ -77,7 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    if(ui.resetRpmBtn) ui.resetRpmBtn.addEventListener('click', () => {
+    const resetRpmBtn = document.getElementById('reset-rpm-btn');
+    if(resetRpmBtn) resetRpmBtn.addEventListener('click', () => {
         isRpmAiSet = true;
         updateRevenueUI();
     });
@@ -342,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('manual-rpm-input').value = Math.round(currentRpm);
     }
 
-    // --- Analytics Tab Functions ---
+    // --- Analytics Tab Functions --- (REWRITTEN)
 
     async function fetchAndRenderAnalytics() {
         if (!accessToken) return;
@@ -384,9 +380,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderRankingList(finalCombinedData, 'likes-ranking-card', 'likes', '件');
             renderRankingList(finalCombinedData, 'comments-ranking-card', 'comments', '件');
 
-            document.getElementById('likes-ranking-card').style.display = 'block';
-            document.getElementById('comments-ranking-card').style.display = 'block';
-
             fetchAiSummary(finalCombinedData);
 
         } catch (e) {
@@ -411,8 +404,8 @@ document.addEventListener('DOMContentLoaded', () => {
             data.items.forEach(item => {
                 details[item.id] = {
                     title: item.snippet.title,
-                    likes: parseInt(item.statistics.likeCount, 10),
-                    comments: parseInt(item.statistics.commentCount, 10)
+                    likes: parseInt(item.statistics.likeCount, 10) || 0,
+                    comments: parseInt(item.statistics.commentCount, 10) || 0
                 };
             });
         }
@@ -456,7 +449,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const summaryEl = document.getElementById('ai-summary-content');
         try {
             const top5 = analyticsData.slice(0, 5);
-            const promptData = { topPerformers: top5.map(v => ({ title: v.title, views: v.views, minutes: v.minutes, likes: v.likes, comments: v.comments })) };
+            const promptData = {
+                topPerformers: top5.map(v => ({ title: v.title, views: v.views, minutes: v.minutes, likes: v.likes, comments: v.comments })),
+                revenue: lastRevenueData ? { hasActual: lastRevenueData.hasActual, rpm: currentRpm } : {}
+            };
             const prompt = `以下のYouTubeアナリティクスデータを分析し、プロのコンサルタントとして、チャンネルの強み、弱み、具体的な改善点を3つの箇条書きで要約してください:\n${JSON.stringify(promptData)}`;
             const res = await fetchDataFromGAS(prompt, {});
             if (res.status === 'success' && res.data.analysis) {
