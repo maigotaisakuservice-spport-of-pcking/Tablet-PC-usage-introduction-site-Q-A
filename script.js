@@ -1,10 +1,10 @@
-// AI Creator Dashboard Scripts (v2 - with persisted login and corrected scopes)
+// AI Creator Dashboard Scripts (v4 - Final Scopes and Persisted Login)
 
 // --- Configuration ---
 const CLIENT_ID = "556927001491-l2b8t4hoqllj3np998t4l49agt02tvfv.apps.googleusercontent.com";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbz9l_Ys_6C5TM-HXIy_mGu0zJKUMrwDO2kVrw_h7rFM9-fCWaFHpr5GXSHDmWoJyi5frw/exec";
-// Corrected scopes for full data access including comments and user profile
-const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/userinfo.profile';
+// Final, corrected scopes for all data access including monetary reports.
+const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly https://www.googleapis.com/auth/userinfo.profile';
 
 // --- State Management ---
 let tokenClient;
@@ -16,14 +16,23 @@ let lastRevenueData = null; // Cache for recalculations
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- UI Elements ---
-    const loginScreen = document.getElementById('login-screen');
-    const dashboardScreen = document.getElementById('dashboard-screen');
-    const googleLoginBtn = document.getElementById('google-login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const tabNav = document.querySelector('.tab-nav');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const tabLinks = document.querySelectorAll('.tab-link');
-    const userNameDisplay = document.getElementById('user-name-display');
+    const ui = {
+        loginScreen: document.getElementById('login-screen'),
+        dashboardScreen: document.getElementById('dashboard-screen'),
+        googleLoginBtn: document.getElementById('google-login-btn'),
+        logoutBtn: document.getElementById('logout-btn'),
+        tabNav: document.querySelector('.tab-nav'),
+        tabContents: document.querySelectorAll('.tab-content'),
+        tabLinks: document.querySelectorAll('.tab-link'),
+        userNameDisplay: document.getElementById('user-name-display'),
+        applyRpmBtn: document.getElementById('apply-rpm-btn'),
+        resetRpmBtn: document.getElementById('reset-rpm-btn'),
+        manualRpmInput: document.getElementById('manual-rpm-input'),
+        videoListContainer: document.getElementById('video-list-container'),
+        analyticsContainer: document.getElementById('analytics-content'),
+        commentListContainer: document.getElementById('comment-list-container'),
+        generateIdeasBtn: document.getElementById('generate-ideas-btn'),
+    };
 
     // --- Google Auth Initialization ---
     const checkGoogle = setInterval(() => {
@@ -36,34 +45,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initializeGsi() {
         tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: handleTokenResponse,
+            client_id: CLIENT_ID, scope: SCOPES, callback: handleTokenResponse,
         });
     }
 
     // --- Event Listeners ---
-    googleLoginBtn.addEventListener('click', () => {
+    ui.googleLoginBtn.addEventListener('click', () => {
         if (tokenClient) tokenClient.requestAccessToken();
         else alert('Google認証の準備ができていません。');
     });
 
-    logoutBtn.addEventListener('click', handleLogout);
+    ui.logoutBtn.addEventListener('click', handleLogout);
 
-    if (tabNav) {
-        tabNav.addEventListener('click', (e) => {
-            const clickedTab = e.target.closest('.tab-link');
-            if (!clickedTab) return;
-            tabLinks.forEach(link => link.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
+    if (ui.tabNav) ui.tabNav.addEventListener('click', (e) => {
+        const clickedTab = e.target.closest('.tab-link');
+        if (clickedTab) {
+            ui.tabLinks.forEach(link => link.classList.remove('active'));
+            ui.tabContents.forEach(content => content.classList.remove('active'));
             clickedTab.classList.add('active');
             document.getElementById(clickedTab.dataset.tab)?.classList.add('active');
-        });
-    }
+        }
+    });
 
-    const applyRpmBtn = document.getElementById('apply-rpm-btn');
-    if(applyRpmBtn) applyRpmBtn.addEventListener('click', () => {
-        const newRpm = parseFloat(document.getElementById('manual-rpm-input').value);
+    if(ui.applyRpmBtn) ui.applyRpmBtn.addEventListener('click', () => {
+        const newRpm = parseFloat(ui.manualRpmInput.value);
         if (!isNaN(newRpm) && newRpm >= 0) {
             currentRpm = newRpm;
             isRpmAiSet = false;
@@ -73,14 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const resetRpmBtn = document.getElementById('reset-rpm-btn');
-    if(resetRpmBtn) resetRpmBtn.addEventListener('click', () => {
+    if(ui.resetRpmBtn) ui.resetRpmBtn.addEventListener('click', () => {
         isRpmAiSet = true;
         updateRevenueUI();
     });
 
-    const videoListContainer = document.getElementById('video-list-container');
-    if (videoListContainer) videoListContainer.addEventListener('click', (e) => {
+    if (ui.videoListContainer) ui.videoListContainer.addEventListener('click', (e) => {
         const target = e.target;
         if (target.closest('.btn-delete')) handleVideoDelete(target.closest('tr').dataset.videoId);
         if (target.closest('.btn-edit')) handleVideoEdit(target.closest('tr'));
@@ -88,13 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.closest('.btn-cancel')) handleCancelEdit(target.closest('tr'));
     });
 
-    const analyticsContainer = document.getElementById('analytics-content');
-    if (analyticsContainer) analyticsContainer.addEventListener('click', (e) => {
+    if (ui.analyticsContainer) ui.analyticsContainer.addEventListener('click', (e) => {
         if (e.target.closest('.btn-show-more')) handleShowMore(e.target.closest('.analytics-card'));
     });
 
-    const commentListContainer = document.getElementById('comment-list-container');
-    if (commentListContainer) commentListContainer.addEventListener('click', (e) => {
+    if (ui.commentListContainer) ui.commentListContainer.addEventListener('click', (e) => {
         const target = e.target;
         if (target.closest('.btn-generate-reply')) handleGenerateReply(target);
         if (target.closest('.ai-reply-suggestion')) {
@@ -102,8 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const generateIdeasBtn = document.getElementById('generate-ideas-btn');
-    if (generateIdeasBtn) generateIdeasBtn.addEventListener('click', handleGenerateIdeas);
+    if (ui.generateIdeasBtn) ui.generateIdeasBtn.addEventListener('click', handleGenerateIdeas);
 
     // --- Core Functions ---
 
@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchUserProfile().then(profile => {
                 showDashboard(profile.name);
                 fetchAllData();
+                if(dataUpdateInterval) clearInterval(dataUpdateInterval);
                 dataUpdateInterval = setInterval(fetchAllData, 3600 * 1000);
             }).catch(() => handleLogout());
         } else {
@@ -138,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const profile = await fetchUserProfile();
             showDashboard(profile.name);
             fetchAllData();
+            if(dataUpdateInterval) clearInterval(dataUpdateInterval);
             dataUpdateInterval = setInterval(fetchAllData, 3600 * 1000);
         } catch (error) {
             alert("ユーザー情報の取得または初期データの読み込みに失敗しました。");
@@ -173,6 +175,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return await response.json();
     }
 
+    async function generateApiError(apiName, response) {
+        let errorMsg = `APIリクエスト(${apiName})が失敗しました (HTTP ${response.status})。`;
+        try {
+            const errorData = await response.json();
+            if (errorData.error && errorData.error.message) {
+                errorMsg += ` 理由: ${errorData.error.message}`;
+            }
+            if (response.status === 403) {
+                 errorMsg += `\n\n【解決策のヒント】\nGoogle Cloud Consoleで、このプロジェクトの「${apiName.includes('Analytics') || apiName.includes('Revenue') ? 'YouTube Analytics API' : 'YouTube Data API v3'}」が有効になっているか、再度ご確認ください。`;
+            }
+        } catch (e) {}
+        return new Error(errorMsg);
+    }
+
     // --- Video Management Functions ---
 
     async function fetchAndRenderVideos() {
@@ -181,13 +197,15 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '<p class="loading-message">動画リストを読み込み中...</p>';
         try {
             const channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true', { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!channelResponse.ok) throw await generateApiError('Channel Details', channelResponse);
             const channelData = await channelResponse.json();
             const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
             const playlistResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,status&playlistId=${uploadsPlaylistId}&maxResults=50`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!playlistResponse.ok) throw await generateApiError('Playlist Items', playlistResponse);
             const playlistData = await playlistResponse.json();
             renderVideoList(playlistData.items);
         } catch (error) {
-            container.innerHTML = '<p class="error-message">動画リストの読み込みに失敗しました。</p>';
+            container.innerHTML = `<p class="error-message">動画リストの読み込みに失敗しました。<br>${error.message}</p>`;
         }
     }
 
@@ -231,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newStatus = row.querySelector('.edit-status').value;
         try {
             const videoRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!videoRes.ok) throw await generateApiError('Video Details for Save', videoRes);
             const videoData = await videoRes.json();
             const payload = { id, snippet: { title: newTitle, description: newDesc, categoryId: videoData.items[0].snippet.categoryId }, status: { privacyStatus: newStatus } };
             const updateRes = await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet,status', { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -238,8 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('更新しました。');
                 fetchAndRenderVideos();
             } else {
-                const err = await updateRes.json();
-                throw new Error(err.error.message);
+                throw await generateApiError('Video Update', updateRes);
             }
         } catch (e) {
             alert(`更新に失敗しました: ${e.message}`);
@@ -254,8 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('削除しました。');
                 document.querySelector(`tr[data-video-id="${id}"]`)?.remove();
             } else {
-                const err = await res.json();
-                throw new Error(err.error.message);
+                throw await generateApiError('Video Delete', res);
             }
         } catch (e) {
             alert(`削除に失敗しました: ${e.message}`);
@@ -272,14 +289,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const range = `startDate=${format(start)}&endDate=${format(end)}`;
         try {
             const res = await fetch(`https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&${range}&metrics=views,estimatedRevenue`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!res.ok) throw await generateApiError('Revenue Analytics', res);
             const data = await res.json();
-            if (data.rows && data.rows.length > 0) {
+            if (data.rows && data.rows.length > 0 && data.columnHeaders.some(h => h.name === 'estimatedRevenue')) {
                 const [views, revenueUSD] = data.rows[0];
                 lastRevenueData = { views, revenue: revenueUSD * 150, hasActual: true, actualRpm: views > 0 ? (revenueUSD * 150 / views) * 1000 : 0 };
             } else {
                 await fetchViewsForRevenueEstimation(range);
             }
         } catch (e) {
+            console.error("Error fetching revenue data, falling back to views-only:", e.message);
             await fetchViewsForRevenueEstimation(range);
         } finally {
             updateRevenueUI();
@@ -289,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchViewsForRevenueEstimation(range) {
         try {
             const res = await fetch(`https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&${range}&metrics=views`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!res.ok) throw await generateApiError('Views for Estimation', res);
             const data = await res.json();
             lastRevenueData = { views: (data.rows && data.rows[0]) ? data.rows[0][0] : 0, revenue: 0, hasActual: false, actualRpm: 0 };
         } catch(e) {
@@ -326,18 +346,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAndRenderAnalytics() {
         if (!accessToken) return;
-        document.querySelectorAll('.ranking-list').forEach(l => l.innerHTML = '<li>読み込み中...</li>');
-        document.getElementById('ai-summary-content').textContent = 'AI分析を生成中...';
+        const summaryEl = document.getElementById('ai-summary-content');
+        const lists = document.querySelectorAll('.analytics-card .ranking-list');
+        const displayError = (msg) => { summaryEl.textContent = `エラー: ${msg}`; lists.forEach(list => list.innerHTML = '<li>-</li>'); };
+        summaryEl.textContent = 'AIによる分析を生成しています...';
+        lists.forEach(list => list.innerHTML = '<li>読み込み中...</li>');
         const end = new Date(), start = new Date();
         start.setDate(end.getDate() - 28);
         const format = d => d.toISOString().split('T')[0];
         const range = `startDate=${format(start)}&endDate=${format(end)}`;
         try {
             const res = await fetch(`https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&${range}&metrics=views,estimatedMinutesWatched,likes,comments&dimensions=video&sort=-views`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!res.ok) throw await generateApiError('Video Analytics', res);
             const data = await res.json();
-            if (!data.rows || data.rows.length === 0) throw new Error('No analytics data');
+            if (!data.rows || data.rows.length === 0) throw new Error('この期間に分析できるデータがありません。');
             const videoIds = data.rows.map(r => r[0]);
             const videosRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoIds.join(',')}`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!videosRes.ok) throw await generateApiError('Video Details', videosRes);
             const videosData = await videosRes.json();
             const titles = {};
             videosData.items.forEach(i => titles[i.id] = i.snippet.title);
@@ -348,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderRankingList(combined, 'comments-ranking-card', 'comments', '件');
             fetchAiSummary(combined);
         } catch (e) {
-            document.getElementById('ai-summary-content').textContent = 'アナリティクスデータの読込に失敗しました。';
+            displayError(e.message);
         }
     }
 
@@ -409,13 +434,15 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '<p class="loading-message">コメントを読み込み中...</p>';
         try {
             const channelRes = await fetch('https://www.googleapis.com/youtube/v3/channels?part=id&mine=true', { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!channelRes.ok) throw await generateApiError('Channel ID for Comments', channelRes);
             const channelData = await channelRes.json();
             const channelId = channelData.items[0].id;
             const res = await fetch(`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&allThreadsRelatedToChannelId=${channelId}&order=time&maxResults=20`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!res.ok) throw await generateApiError('Comment Threads', res);
             const data = await res.json();
             renderCommentList(data.items);
         } catch (e) {
-            container.innerHTML = '<p class="error-message">コメントの読込に失敗しました。</p>';
+            container.innerHTML = `<p class="error-message">コメントの読み込みに失敗しました。<br>${e.message}</p>`;
         }
     }
 
@@ -473,18 +500,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UI State Changers ---
 
     function showDashboard(userName) {
-        userNameDisplay.textContent = `ようこそ、${userName}さん`;
-        loginScreen.style.display = 'none';
-        dashboardScreen.style.display = 'flex';
+        ui.userNameDisplay.textContent = `ようこそ、${userName}さん`;
+        ui.loginScreen.style.display = 'none';
+        ui.dashboardScreen.style.display = 'flex';
         document.body.style.justifyContent = 'flex-start';
         document.body.style.alignItems = 'flex-start';
         document.body.style.textAlign = 'left';
     }
 
     function showLoginScreen() {
-        userNameDisplay.textContent = 'ようこそ、ゲストさん';
-        dashboardScreen.style.display = 'none';
-        loginScreen.style.display = 'block';
+        ui.userNameDisplay.textContent = 'ようこそ、ゲストさん';
+        ui.dashboardScreen.style.display = 'none';
+        ui.loginScreen.style.display = 'block';
         document.body.style.justifyContent = 'center';
         document.body.style.alignItems = 'center';
         document.body.style.textAlign = 'center';
