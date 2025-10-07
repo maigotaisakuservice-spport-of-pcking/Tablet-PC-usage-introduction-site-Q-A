@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Creator Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <div id="login-screen">
+        <header class="main-header">
+            <h1>AI Creator Dashboard</h1>
+        </header>
+        <main class="login-container">
+            <h2>AIがあなたのYouTubeチャンネルを<br>次のステージへ</h2>
+            <p>Googleアカウントでログインして、AIによる分析とサポートを体験しましょう。</p>
+            <button id="google-login-btn">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo">
+                Googleでログイン/登録
+            </button>
+        </main>
+        <footer class="main-footer">
+            <p>
+                <a href="terms.html" target="_blank">利用規約</a>
+            </p>
+            <p class="terms-agreement">
+                ログインをもって、利用規約に同意したものとみなします。
+            </p>
+            <p class="copyright">&copy; 2025 PDG Deployment</p>
+        </footer>
+    </div>
+
+    <div id="dashboard-screen" style="display:none;">
+        <aside class="sidebar">
+            <h1 class="dashboard-title">AI Creator Dashboard</h1>
+            <nav class="tab-nav">
+                <button class="tab-link active" data-tab="analytics-content">
+                    <span>アナリティクス</span>
+                </button>
+                <button class="tab-link" data-tab="videos-content">
+                    <span>動画管理</span>
+                </button>
+                <button class="tab-link" data-tab="revenue-content">
+                    <span>収益確認</span>
+                </button>
+                <button class="tab-link" data-tab="comments-content">
+                    <span>コメント返信</span>
+                </button>
+                <button class="tab-link" data-tab="creation-support-content">
+                    <span>動画作成支援</span>
+                </button>
+                <button class="tab-link" data-tab="support-content">
+                    <span>サポート</span>
+                </button>
+            </nav>
+            <footer class="sidebar-footer">
+                <p class="copyright">&copy; 2025 PDG Deployment</p>
+            </footer>
+        </aside>
+
+        <div class="main-view">
+            <header class="main-header-bar">
+                <div class="user-profile">
+                    <span id="user-name-display">ようこそ、ゲストさん</span>
+                    <button id="logout-btn">ログアウト</button>
+                </div>
+            </header>
+            <main id="dashboard-main-content">
+                <div id="analytics-content" class="tab-content active">
+                    <h2>AIアナリティクス</h2>
+                    <div id="ai-summary-card" class="card">
+                        <h3>AIによるチャンネル総評</h3>
+                        <p id="ai-summary-content" class="loading-message">AIによる分析を生成しています...</p>
+                    </div>
+                    <div class="analytics-cards-container">
+                        <div class="card analytics-card" id="views-ranking-card">
+                            <h3>視聴回数ランキング (上位5件)</h3>
+                            <ul class="ranking-list"></ul>
+                            <button class="btn-show-more" style="display: none;">もっと見る</button>
+                        </div>
+                        <div class="card analytics-card" id="watch-time-ranking-card">
+                            <h3>総再生時間ランキング (上位5件)</h3>
+                            <ul class="ranking-list"></ul>
+                            <button class="btn-show-more" style="display: none;">もっと見る</button>
+                        </div>
+                        <div class="card analytics-card" id="likes-ranking-card">
+                            <h3>高評価数ランキング (上位5件)</h3>
+                            <ul class="ranking-list"></ul>
+                            <button class="btn-show-more" style="display: none;">もっと見る</button>
+                        </div>
+                        <div class="card analytics-card" id="comments-ranking-card">
+                            <h3>コメント数ランキング (上位5件)</h3>
+                            <ul class="ranking-list"></ul>
+                            <button class="btn-show-more" style="display: none;">もっと見る</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="videos-content" class="tab-content">
+                    <h2>動画の管理</h2>
+                    <p>チャンネルにアップロードされた動画の一覧です。説明の編集や公開状況の変更、削除ができます。</p>
+                    <div id="video-list-container"></div>
+                </div>
+                <div id="revenue-content" class="tab-content">
+                    <h2>収益の確認</h2>
+                    <p>チャンネルの収益パフォーマンスと、AIによる分析を確認します。</p>
+                    <div class="revenue-cards-container">
+                        <div class="card">
+                            <h3>推定収益 (過去28日間)</h3>
+                            <p id="estimated-revenue" class="revenue-value">¥0</p>
+                            <span id="revenue-type-label" class="revenue-label">(実績データ)</span>
+                        </div>
+                        <div class="card">
+                            <h3>総再生回数 (過去28日間)</h3>
+                            <p id="revenue-views" class="revenue-value">0</p>
+                        </div>
+                        <div class="card">
+                            <h3>RPM (1000回再生あたりの収益)</h3>
+                            <p id="revenue-rpm" class="revenue-value">¥500</p>
+                            <span id="rpm-type-label" class="revenue-label">(手動設定)</span>
+                        </div>
+                    </div>
+                    <div class="rpm-management-card">
+                        <h3>RPM設定</h3>
+                        <p>収益化されていない場合、またはシミュレーションを行いたい場合は、以下のRPMを手動で設定してください。設定したRPMに基づいて推定収益が再計算されます。</p>
+                        <div class="rpm-input-group">
+                            <label for="manual-rpm-input">手動RPM設定 (円):</label>
+                            <input type="number" id="manual-rpm-input" value="500">
+                            <button id="apply-rpm-btn">適用</button>
+                            <button id="reset-rpm-btn">AI自動設定に戻す</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="comments-content" class="tab-content">
+                    <h2>コメント返信支援</h2>
+                    <p>チャンネルに寄せられた最新のコメントを確認し、AIによる返信文の生成を活用できます。</p>
+                    <div id="comment-list-container"></div>
+                </div>
+                <div id="creation-support-content" class="tab-content">
+                    <h2>動画作成支援</h2>
+                    <p>動画のテーマやキーワードを入力すると、AIが魅力的なタイトル案や構成案を提案します。</p>
+                    <div class="creation-support-card">
+                        <h3>アイデア生成ツール</h3>
+                        <div class="creation-input-group">
+                            <label for="video-idea-input">動画のテーマやキーワードを入力してください:</label>
+                            <textarea id="video-idea-input" rows="4" placeholder="例: 初心者向けの最新ガジェット紹介, 10分でできる簡単レシピ, etc."></textarea>
+                            <button id="generate-ideas-btn">AIに提案させる</button>
+                        </div>
+                        <div id="ai-ideas-container" style="display: none;">
+                            <h4>AIからの提案</h4>
+                            <div id="ai-ideas-content"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="support-content" class="tab-content">
+                    <h2>サポート & ヘルプ</h2>
+                    <p>このツールの使い方や、YouTubeチャンネル運営に関するヒントをまとめました。</p>
+                    <div class="support-section">
+                        <h3>このツールの使い方</h3>
+                        <div class="faq-item">
+                            <h4>各タブの基本的な見方を教えて</h4>
+                            <p>（ここに各タブの機能についての説明が入ります。例：アナリティクスタブでは、AIによるチャンネル全体の分析と、各指標のランキングを確認できます。）</p>
+                        </div>
+                        <div class="faq-item">
+                            <h4>データはいつ更新されるの？</h4>
+                            <p>データは、ページにログイン（または再読み込み）した直後と、その後はページを開いている限り1時間ごとに自動で更新されます。</p>
+                        </div>
+                    </div>
+                    <div class="support-section">
+                        <h3>RPMについて</h3>
+                        <div class="faq-item">
+                            <h4>RPMとは？なぜ重要？</h4>
+                            <p>RPM (Revenue Per Mille) は、動画が1,000回再生されたときに得られる収益額の目安を示す指標です。広告の種類、視聴者の地域、季節など様々な要因で変動します。この指標を把握することで、チャンネルの収益性を理解し、改善するのに役立ちます。</p>
+                        </div>
+                         <div class="faq-item">
+                            <h4>AIによる自動設定と手動設定の違い</h4>
+                            <p>AIはあなたのチャンネルの実際の収益パフォーマンス（取得可能な場合）を分析し、最適なRPMを自動で推定・設定します。収益化前などでデータが不足している場合や、特定の目標値を設定してシミュレーションしたい場合は、手動でRPMを自由に変更することが可能です。</p>
+                        </div>
+                    </div>
+                    <div class="support-section">
+                        <h3>YouTubeチャンネル運営のヒント</h3>
+                        <div class="faq-item">
+                            <h4>再生数が伸びるタイトルの付け方は？</h4>
+                            <p>具体的で、視聴者が「何を得られるか」が瞬時にわかるキーワードを含めることが重要です。「動画作成支援」タブのAIに、あなたの動画のテーマを伝えることで、魅力的なタイトル案を複数提案させることもできますので、ぜひご活用ください。</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
