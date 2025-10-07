@@ -1,18 +1,17 @@
-// AI Creator Dashboard Scripts (v4 - Final Scopes and Persisted Login)
+// AI Creator Dashboard Scripts (v7 - Final Corrected Analytics with Data API)
 
 // --- Configuration ---
 const CLIENT_ID = "556927001491-l2b8t4hoqllj3np998t4l49agt02tvfv.apps.googleusercontent.com";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbz9l_Ys_6C5TM-HXIy_mGu0zJKUMrwDO2kVrw_h7rFM9-fCWaFHpr5GXSHDmWoJyi5frw/exec";
-// Final, corrected scopes for all data access including monetary reports.
 const SCOPES = 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/yt-analytics-monetary.readonly https://www.googleapis.com/auth/userinfo.profile';
 
 // --- State Management ---
 let tokenClient;
 let accessToken = null;
 let dataUpdateInterval = null;
-let currentRpm = 500; // Default RPM
-let isRpmAiSet = true; // True if using actual/AI RPM, false if manual
-let lastRevenueData = null; // Cache for recalculations
+let currentRpm = 500;
+let isRpmAiSet = true;
+let lastRevenueData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- UI Elements ---
@@ -54,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tokenClient) tokenClient.requestAccessToken();
         else alert('Google認証の準備ができていません。');
     });
-
     ui.logoutBtn.addEventListener('click', handleLogout);
 
     if (ui.tabNav) ui.tabNav.addEventListener('click', (e) => {
@@ -108,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Core Functions ---
 
     function escapeHTML(str) {
+        if (!str) return '';
         const p = document.createElement('p');
         p.textContent = str;
         return p.innerHTML;
@@ -348,37 +347,80 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!accessToken) return;
         const summaryEl = document.getElementById('ai-summary-content');
         const lists = document.querySelectorAll('.analytics-card .ranking-list');
-        const displayError = (msg) => { summaryEl.textContent = `エラー: ${msg}`; lists.forEach(list => list.innerHTML = '<li>-</li>'); };
+        const displayError = (msg) => {
+            summaryEl.textContent = `エラー: ${msg}`;
+            lists.forEach(list => list.innerHTML = '<li>-</li>');
+        };
+
         summaryEl.textContent = 'AIによる分析を生成しています...';
         lists.forEach(list => list.innerHTML = '<li>読み込み中...</li>');
+
         const end = new Date(), start = new Date();
         start.setDate(end.getDate() - 28);
         const format = d => d.toISOString().split('T')[0];
-        const range = `startDate=${format(start)}&endDate=${format(end)}`;
+        const dateRange = `startDate=${format(start)}&endDate=${format(end)}`;
+
         try {
-            const res = await fetch(`https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&${range}&metrics=views,estimatedMinutesWatched,likes,comments&dimensions=video&sort=-views`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-            if (!res.ok) throw await generateApiError('Video Analytics', res);
-            const data = await res.json();
-            if (!data.rows || data.rows.length === 0) throw new Error('この期間に分析できるデータがありません。');
-            const videoIds = data.rows.map(r => r[0]);
-            const videosRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoIds.join(',')}`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-            if (!videosRes.ok) throw await generateApiError('Video Details', videosRes);
-            const videosData = await videosRes.json();
-            const titles = {};
-            videosData.items.forEach(i => titles[i.id] = i.snippet.title);
-            const combined = data.rows.map(r => ({ id: r[0], title: titles[r[0]] || r[0], views: r[1], minutes: r[2], likes: r[3], comments: r[4] }));
-            renderRankingList(combined, 'views-ranking-card', 'views', '回');
-            renderRankingList(combined, 'watch-time-ranking-card', 'minutes', '分');
-            renderRankingList(combined, 'likes-ranking-card', 'likes', '件');
-            renderRankingList(combined, 'comments-ranking-card', 'comments', '件');
-            fetchAiSummary(combined);
+            const analyticsData = await fetchAnalyticsReport(dateRange, 'views,estimatedMinutesWatched', 'video', '-views');
+            if (!analyticsData.rows || analyticsData.rows.length === 0) {
+                throw new Error('この期間に分析できるデータがありません。');
+            }
+
+            const videoIds = analyticsData.rows.map(r => r[0]);
+            const videoDetails = await fetchVideoDetails(videoIds);
+
+            const finalCombinedData = analyticsData.rows.map(row => ({
+                id: row[0],
+                title: videoDetails[row[0]]?.title || row[0],
+                views: row[1],
+                minutes: row[2],
+                likes: videoDetails[row[0]]?.likes || 0,
+                comments: videoDetails[row[0]]?.comments || 0,
+            }));
+
+            renderRankingList(finalCombinedData, 'views-ranking-card', 'views', '回');
+            renderRankingList(finalCombinedData, 'watch-time-ranking-card', 'minutes', '分');
+            renderRankingList(finalCombinedData, 'likes-ranking-card', 'likes', '件');
+            renderRankingList(finalCombinedData, 'comments-ranking-card', 'comments', '件');
+
+            document.getElementById('likes-ranking-card').style.display = 'block';
+            document.getElementById('comments-ranking-card').style.display = 'block';
+
+            fetchAiSummary(finalCombinedData);
+
         } catch (e) {
             displayError(e.message);
         }
     }
 
+    async function fetchAnalyticsReport(dateRange, metrics, dimensions, sort) {
+        const url = `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==MINE&${dateRange}&metrics=${metrics}&dimensions=${dimensions}&sort=${sort}`;
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+        if (!response.ok) throw await generateApiError(`Analytics (${metrics})`, response);
+        return await response.json();
+    }
+
+    async function fetchVideoDetails(videoIds) {
+        const details = {};
+        for (let i = 0; i < videoIds.length; i += 50) {
+            const batch = videoIds.slice(i, i + 50);
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${batch.join(',')}`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            if (!res.ok) throw await generateApiError('Video Details', res);
+            const data = await res.json();
+            data.items.forEach(item => {
+                details[item.id] = {
+                    title: item.snippet.title,
+                    likes: parseInt(item.statistics.likeCount, 10),
+                    comments: parseInt(item.statistics.commentCount, 10)
+                };
+            });
+        }
+        return details;
+    }
+
     function renderRankingList(data, cardId, metric, unit) {
         const card = document.getElementById(cardId);
+        if (!card) return;
         const list = card.querySelector('.ranking-list');
         const sorted = [...data].sort((a, b) => b[metric] - a[metric]);
         card.dataset.fullData = JSON.stringify(sorted);
@@ -413,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const summaryEl = document.getElementById('ai-summary-content');
         try {
             const top5 = analyticsData.slice(0, 5);
-            const promptData = { topPerformers: top5.map(v => ({ title: v.title, views: v.views, minutes: v.minutes, likes: v.likes })) };
+            const promptData = { topPerformers: top5.map(v => ({ title: v.title, views: v.views, minutes: v.minutes, likes: v.likes, comments: v.comments })) };
             const prompt = `以下のYouTubeアナリティクスデータを分析し、プロのコンサルタントとして、チャンネルの強み、弱み、具体的な改善点を3つの箇条書きで要約してください:\n${JSON.stringify(promptData)}`;
             const res = await fetchDataFromGAS(prompt, {});
             if (res.status === 'success' && res.data.analysis) {
